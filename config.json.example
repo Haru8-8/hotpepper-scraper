@@ -1,0 +1,41 @@
+{
+  "system": {
+    "base_url": "https://www.hotpepper.jp",
+    "headers": {
+      "Your Headers"
+    },
+    "timeout": 10
+  },
+  "search": {
+    "target_area_key": "Tokyo",
+    "target_genre_key": "Izakaya"
+  },
+  "constraints": {
+    "max_pages": 50,
+    "max_shops": 1000
+  },
+  "master": {
+    "genres": { "Izakaya": "G001", "Japanese": "G004" },
+    "large_area": { "Tokyo": "SA11", "Osaka": "SA23" },
+    "middle_area": { 
+      "Shinjuku": "Y055", "Shibuya": "Y030",
+      "Umeda": "Y300", "Tennouji": "Y325"
+    },
+    "detail_area": { 
+      "Nishishinjuku": "XA02", "Higashishinjuku": "XA00",
+      "Shibuyasenta-gai": "X097", "Dougenzaka": "X090",
+      "Nishiumeda": "XEI0", "Higashidoori": "X315",
+      "Tennoujieki": "X385", "Shinsekai": "XEIV"
+    }
+  },
+  "hierarchy": {
+    "Tokyo": {
+      "Shinjuku": ["Nishishinjuku", "Higashishinjuku"],
+      "Shibuya": ["Shibuyasenta-gai", "Dougenzaka"]
+    },
+    "Osaka": {
+      "Umeda": ["Nishiumeda", "Higashidoori"],
+      "Tennouji": ["Tennoujieki", "Shinsekai"]
+    }
+  }
+}

@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Scraper")
 
 def parse_list_page(html, url):
     soup = BeautifulSoup(html, "html.parser")
@@ -32,7 +32,7 @@ def parse_list_page(html, url):
                 "source_url": url,
             })
         except Exception as e:
-            logging.error(f"店舗データの解析に失敗しました。スキップします: {e}")
+            logger.error(f"店舗データの解析に失敗しました。スキップします: {e}")
             continue
     return shops
 

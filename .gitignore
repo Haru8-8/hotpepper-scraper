@@ -7,3 +7,9 @@ scraper.log
 config.json
 
 __pycache__
+*.py[cod]
+*$py.class
+
+build/
+dist/
+*.spec

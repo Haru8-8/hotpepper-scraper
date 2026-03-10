@@ -1,9 +1,10 @@
 import json
 import logging
+import sys
 import os
 import time
 from datetime import datetime
-from typing import Dict, List, Set, Optional, Any, Generator
+from typing import Dict, List, Set, Optional, Any, Generator, Union
 
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -15,31 +16,71 @@ from parser import parse_list_page
 AREA_LEVELS = ["large_area", "middle_area", "detail_area"]
 
 class HotPepperScraper:
-    def __init__(self, config_path: str):
-        self.config = self._load_config(config_path)
+    def __init__(self, config_input: Union[str, Dict], gui_mode: bool = False):
+        self.gui_mode = gui_mode    # GUIモードかどうかを保持
+        self.config = self._load_config(config_input)
         self.logger = self._setup_logger()
-        self.csv_file = "shop_list.csv"
+        self.csv_file = self.get_external_path("shop_list.csv")
         self.seen_shop_ids: Set[str] = self._load_seen_ids()
         self.total_shops_count = len(self.seen_shop_ids)
 
-    def _load_config(self, path: str) -> Dict:
-        with open(path, 'r', encoding='utf-8') as f:
+    def _load_config(self, config_input: Union[str, Dict]) -> Dict:
+        if isinstance(config_input, dict):
+            return config_input
+        
+        with open(config_input, 'r', encoding='utf-8') as f:
             return json.load(f)
 
     def _setup_logger(self) -> logging.Logger:
         logger = logging.getLogger("Scraper")
         logger.setLevel(logging.INFO)
-        if not logger.handlers:
+
+        # ハンドラをクリアせず、必要なものがなければ追加する方針にする
+        has_stream_handler = any(isinstance(h, logging.StreamHandler) for h in logger.handlers)
+        has_file_handler = any(isinstance(h, logging.FileHandler) for h in logger.handlers)
+
+        # GUIモードでなければ StreamHandler (コンソール出力) を追加する
+        if not self.gui_mode:
+            if not has_stream_handler:
+                    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+                    sh = logging.StreamHandler()
+                    sh.setFormatter(formatter)
+                    logger.addHandler(sh)
+                    
+        # FileHandlerがなければ FileHandler（ログ残し用）を追加する
+        if not has_file_handler:
             formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-            # コンソール出力
-            sh = logging.StreamHandler()
-            sh.setFormatter(formatter)
-            logger.addHandler(sh)
-            # ファイル出力
             fh = logging.FileHandler('scraper.log', encoding='utf-8')
             fh.setFormatter(formatter)
             logger.addHandler(fh)
+
         return logger
+    
+    @staticmethod
+    def get_external_path(relative_path):
+        """
+        .app の「外側」（ユーザーに見える場所）のパスを取得
+        config.json, scraper.log, shop_list.csv 用
+        """
+        if getattr(sys, 'frozen', False):
+            # 実行ファイルから遡って .app の親ディレクトリを探す
+            p = os.path.abspath(sys.executable)
+            while p != "/":
+                if p.endswith(".app"):
+                    return os.path.join(os.path.dirname(p), relative_path)
+                p = os.path.dirname(p)
+            return os.path.join(os.path.dirname(os.path.abspath(sys.executable)), relative_path)
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+    
+    @staticmethod
+    def get_internal_resource_path(relative_path):
+        """
+        .app の「内部」（PyInstallerの一時展開先）のパスを取得
+        ライブラリや同梱リソース用
+        """
+        if hasattr(sys, '_MEIPASS'):
+            return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
     def _load_seen_ids(self) -> Set[str]:
         """既存CSVから取得済みURLを読み込む"""
@@ -169,9 +210,6 @@ class HotPepperScraper:
                 # リストの中にターゲット（小エリア名）がある場合
                 current_node = key # 文字列そのものをセット
                 break
-
-        print(current_node)
-        print(root_path)
 
         # 3. 末端パスを一つずつ処理
         for leaf_path in self.get_leaf_paths(current_node, root_path):

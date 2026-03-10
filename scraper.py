@@ -3,7 +3,7 @@ from requests.exceptions import RequestException, HTTPError, Timeout
 from bs4 import BeautifulSoup
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Scraper")
 
 def generate_url(base_url, path_list, page=1):
     # ページネーションの制御
@@ -24,11 +24,11 @@ def fetch_html(url, headers, timeout=10):
         response.encoding = response.apparent_encoding
         return response.text
     except Timeout:
-        logging.error(f"タイムアウトしました: {url}")
+        logger.error(f"タイムアウトしました: {url}")
     except HTTPError as e:
-        logging.error(f"HTTPエラーが発生しました: {e}")
+        logger.error(f"HTTPエラーが発生しました: {e}")
     except RequestException as e:
-        logging.error(f"通信エラーが発生しました: {e}")
+        logger.error(f"通信エラーが発生しました: {e}")
     return None # 失敗時は None を返すことで、呼び出し側で判定できるようにする
     
 def fetch_tel_number(detail_url, headers):
